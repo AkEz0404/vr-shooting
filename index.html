@@ -53,22 +53,21 @@ border-radius: 5px; }
 	resize();
 
 	// Переменная для запоминания начального наклона
-let baseBeta = 0;
+let baseBeta = 0; // Переменная для запоминания наклона
 let calibrated = false;
 
 async function startVR() {
-    // Стандартный запрос разрешения (оставляем)
+    // Запрос разрешения (оставляем как есть)
     if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
         try {
             const response = await DeviceOrientationEvent.requestPermission();
             if (response !== 'granted') {
-                alert("Нужен доступ к гироскопу для игры!");
+                alert("Нужен доступ к гироскопу!");
                 return;
             }
         } catch (error) { console.error(error); }
     }
 
-    // Запускаем игру
     document.getElementById("overlay").style.display = "none";
     isRunning = true;
     calibrated = false; // Сбрасываем калибровку для нового старта
@@ -76,42 +75,37 @@ async function startVR() {
     window.addEventListener('deviceorientation', (event) => {
         if (!isRunning) return;
 
-        // --- КАЛИБРОВКА (Первое срабатывание) ---
+        // ЭТАП КАЛИБРОВКИ: Запоминаем текущий наклон как "ноль"
         if (!calibrated) {
-            // Запоминаем текущий наклон как центр
             baseBeta = event.beta; 
             calibrated = true;
             return;
         }
 
-        // --- ОБРАБОТКА ДВИЖЕНИЯ ---
         let x, y;
-        const sensitivity = 12; // Чувствительность
+        const sensitivity = 12; 
 
-        // Вычисляем отклонение от центра
-        let offsetBeta = event.beta - baseBeta; // Это решит проблему "пола"
+        // Вычисляем отклонение от того положения, в котором ты держал телефон при старте
+        let offsetBeta = event.beta - baseBeta; 
         let offsetGamma = event.gamma;
 
-        // Проверяем ориентацию (горизонтально/вертикально)
         if (window.innerWidth > window.innerHeight) {
-            // Горизонтально (на боку)
+            // Горизонтальный режим (на боку)
             x = offsetBeta * sensitivity;
-            // Добавим минус к gamma, чтобы при наклоне на себя камера не шла вниз
-            y = -offsetGamma * sensitivity; 
+            y = -offsetGamma * sensitivity; // Инверсия, чтобы камера не уходила вниз
         } else {
-            // Вертикально
+            // Вертикальный режим
             x = offsetGamma * sensitivity;
             y = offsetBeta * sensitivity;
         }
 
-        // Применяем к твоим переменным
         gyro.x = x;
         gyro.y = y;
-
     }, true);
 
     animate();
 }
+
 
 
 	function fire() {
