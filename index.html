@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+	<title>VR Shooting Simulator</title>
+	<style>
+	body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+	canvas { display: block; width: 100vw; height: 100vh; }
+	#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; 
+justify-content: center; align-items: center;  background: rgba(0,0,0,0.8); color: white; z-index: 10; }
+	button {
+padding: 20px 40px; font-size: 24px; cursor: pointer; background: #4CAF50; color: white; border: none; 
+border-radius: 5px; }
+	</style>
+  </head>
+
+  <body>
+    <div id="overlay">
+	<button onclick="startVR()">START VR TRAINING (BAŞLA)</button>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+	let shootInterval = null;
+	const canvas = document.getElementById("gameCanvas");
+	const ctx = canvas.getContext("2d", { willReadFrequently: true});
+	
+	const T10_CONFIG = { x: 960, y: 540 };
+	let gyro = { x: 0, y: 0 };
+	let isRunning = false;
+
+	let ammo = 30;
+	let score = 0;
+	let targets = [{ x: 200, y: 100, alive: true}, { x: -300, y: 50, alive: true}, { x: 0, y: -150, alive: true}];
+
+	const ASSETS = {
+	   bg: new Image(),
+	   bulletMark: new Image(),
+	   gunshot: new Audio("ak74_shot.mp3") };
+	ASSETS.bg.src = "iceland.jpg";
+	ASSETS.bg.onload = () => {
+	  console.log("Surat ustunlikli yuklendi!"); };
+	ASSETS.bg.onerror = () => {
+	  console.error("Surat tapylmady!"); };
+	ASSETS.bulletMark.src = "bullet_mark.png";
+
+	function resize() {
+	   canvas.width = window.innerWidth;
+	   canvas.height = window.innerHeight; }
+	window.addEventListener('resize', resize);
+	resize();
+
+	async function startVR() {
+		if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
+		DeviceOrientationEvent.requestPermission().then(response => {
+		if (response == 'granted') {
+		}
+	}).catch(console.error); }
+
+		document.getElementById("overlay").style.display = "none";
+		isRunning = true;
+		window.addEventListener('deviceorientation', (event) =>
+	{
+		gyro.x = event.gamma * 12;
+		gyro.y = (event.beta - 45) * 12; }, true);
+		animate(); }
+
+	function fire() {
+		if (!isRunning || ammo <= 0) {
+			if (ammo <= 0)
+		console.log("Recharge! (Perezaryadka!)"); return; }
+
+	ammo--;
+		ASSETS.gunshot.currentTime = 0;
+		ASSETS.gunshot.play();
+		gyro.y -= 4; 
+
+	targets.forEach(t => {
+		if (t.alive) {
+	let dist = Math.sqrt(Math.pow(t.x - gyro.x, 2) + Math.pow(t.y - gyro.y, 2));
+		if (dist < 40) {
+		t.alive = false;
+		score++;
+		console.log("HIT! Score: " + score); }
+		}
+	});
+}
+	const startShooting = (e) => {
+		if (!isRunning) return;
+		fire();
+		shootInterval = setInterval(fire, 110); };
+
+	const stopShooting = () => {
+		clearInterval(shootInterval); };
+
+	window.addEventListener('mousedown', startShooting);
+	window.addEventListener('mouseup', stopShooting);
+
+	window.addEventListener('touchstart', startShooting);
+	window.addEventListener('touchend', stopShooting);
+
+	function drawScene(offsetX, eyeOffset) {
+	const viewX = (typeof gyro !== 'undefined' && gyro.x) ? gyro.x : 0;
+	const viewY = (typeof gyro !== 'undefined' && gyro.y) ? gyro.y : 0;
+
+	letviewX = gyro.x || 0;
+	letviewY = gyro.y || 0;
+
+		const w = canvas.width / 2;
+		const h = canvas.height;
+
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(offsetX, 0, w, h);
+		ctx.clip();
+
+	const z = 1.5;
+
+	ctx.drawImage(ASSETS.bg, offsetX - (w * z - w) / 2 + viewX + eyeOffset,
+	-(h * z - h) / 2 + viewY,
+	w * z, h * z );
+
+	targets.forEach(t => {
+	if (t.alive) {
+	  ctx.fillStyle = "white";
+	  ctx.strokeStyle = "red";
+	  ctx.lineWidth = 5;
+
+	let tx = offsetX + w/2 + t.x - viewX;
+	let ty = h/2 + t.y - viewY;
+
+	ctx.beginPath();
+	ctx.arc(tx, ty, 20, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke(); }
+});
+
+	ctx.fillStyle = "red";
+	ctx.beginPath();
+	ctx.arc(offsetX + w / 2, h / 2, 5, 0, Math.PI * 2);
+	ctx.fill();
+
+	ctx.fillStyle = "yellow";
+	ctx.font = "20px Arial";
+	ctx.fillText("AMMO: " + ammo, offsetX + 20, 40);
+	ctx.fillText("SCORE: " + score, offsetX + 20, 70);
+
+	ctx.restore();
+	}
+
+	
+	
+	function animate() {
+		if (!isRunning) return;
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	drawScene(0, -8);
+	drawScene(canvas.width / 2, 8);
+
+	ctx.fillStyle = "black";
+	ctx.fillRect(canvas.width / 2 - 2, 0, 4, canvas.height);
+
+	requestAnimationFrame(animate);
+	}
+	
+	window.addEventListener('mousemove', (e) => {
+	  if (isRunning) {
+	  gyro.x = (e.clientX - window.innerWidth / 2) * 1;
+	  gyro.y = (e.clientY - window.innerHeight / 2) * 1; }
+	});
+
+    </script>
+  </body>
+</html>

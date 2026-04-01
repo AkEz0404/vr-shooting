@@ -1,0 +1,301 @@
+/* Base & Background */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #0a0c0a;
+  font-family: "Courier New", Courier, monospace;
+}
+
+#bg {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.4) contrast(1.1) saturate(0.5);
+  z-index: -2;
+}
+
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+  background-size: 100% 4px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Container Layout */
+#mainContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%; /* Made slightly wider */
+  height: 90%; /* Made slightly taller to fit everything */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* This forces buttons to the bottom */
+}
+
+.page-header h1 {
+  color: #fff;
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  margin: 0;
+  border-left: 8px solid #4b5320;
+  padding-left: 15px;
+}
+
+.highlight {
+  color: #8da070;
+}
+
+/* Tactical Panels */
+#instructionsContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  flex: 1; /* This tells the panels to take all available space EXCEPT button space */
+  min-height: 0; /* Critical for flex children with scrolling content */
+  margin-bottom: 20px;
+}
+
+.instructions-panel {
+  flex: 1;
+  background: rgba(15, 20, 15, 0.9);
+  border: 1px solid #4b5320;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  background: #4b5320;
+  color: white;
+  padding: 8px 15px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+}
+
+.panel-header.warning {
+  background: #7a6300; /* Dark mustard/warning color */
+}
+
+/* Custom Tactical Scrollbar */
+.scroll-content {
+  padding: 20px;
+  color: #c5ccb8;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  overflow-y: scroll;
+}
+
+.scroll-content::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-content::-webkit-scrollbar-track {
+  background: #0a0c0a;
+}
+.scroll-content::-webkit-scrollbar-thumb {
+  background: #4b5320;
+  border: 1px solid #8da070;
+}
+
+.image-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.image-grid img {
+  width: 90%;
+  border: 1px solid #4b5320;
+  filter: sepia(0.3) contrast(1.1);
+}
+
+/* Buttons Container */
+#buttonsContainer {
+  display: flex;
+  justify-content: space-between;
+  height: 60px;
+  flex-shrink: 0; /* Prevents buttons from being squashed */
+}
+
+.military-btn {
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+  padding: 0 30px;
+  text-transform: uppercase;
+}
+
+.primary {
+  background: #4b5320;
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  clip-path: polygon(0 0, 95% 0, 100% 30%, 100% 100%, 5% 100%, 0 70%);
+}
+
+.primary:hover {
+  background: #626d2d;
+  box-shadow: 0 0 15px rgba(141, 160, 112, 0.5);
+  transform: translateY(-2px);
+}
+
+.buttons {
+  position: relative;
+  cursor: pointer;
+  padding: 15px;
+  background: #2d361e;
+  border: 1px solid #4b5320;
+  color: #d1d7c4;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.buttons:hover {
+  background: #4b5320;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(141, 160, 112, 0.4);
+  transform: scale(1.02);
+}
+
+.buttons:active {
+  transform: scale(0.98);
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid #555;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.secondary:hover {
+  background: #333;
+  border-color: #888;
+}
+
+#distanceTable td {
+  border: 1px solid #4b5320;
+  padding: 5px;
+  text-align: center;
+}
+/* Grid Setup */
+.image-grid {
+  position: relative;
+  overflow-x: hidden;
+  display: grid;
+  justify-items: center;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 50, 0, 0.05) 0px,
+    rgba(0, 50, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+#secondSessionGrid {
+  overflow-y: scroll;
+}
+
+#secondSessionGrid::after {
+  animation: scan-move-second 4s linear infinite;
+}
+
+.image-grid canvas {
+  background: rgba(0, 20, 0, 0.4);
+  border: 1px solid #4b5320;
+  box-shadow: inset 0 0 15px rgba(75, 83, 32, 0.5);
+  /* Scale them to fit the panel width while maintaining size */
+  width: 100%;
+  height: auto;
+  max-width: 240px;
+}
+
+/* Scroll fix for the panel to handle bigger images */
+#bodyImages {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The Scan Line */
+.image-grid::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 255, 0, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+  filter: blur(1px);
+  z-index: 10;
+  animation: scan-move 4s linear infinite;
+}
+
+@keyframes scan-move {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 95%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+@keyframes scan-move-second {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 115%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+/* Optional: Add a flickering "Active" text to the grid */
+.image-grid::before {
+  content: "SISTEMA TAÝYN - ULGAMDA...";
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  font-family: "Courier New", monospace;
+  color: lime;
+  font-size: 10px;
+  letter-spacing: 2px;
+  animation: blink 1s steps(2) infinite;
+  z-index: 11;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

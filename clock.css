@@ -1,0 +1,80 @@
+.clock-face {
+  position: absolute;
+  left: 40px; /* Adjusted for better HUD placement */
+  top: 40px;
+  width: 140px;
+  height: 140px;
+  border: 2px solid rgba(141, 160, 112, 0.5);
+  color: #8da070;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+  background: rgba(10, 15, 10, 0.7);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 20px rgba(75, 83, 32, 0.4);
+
+  cursor: none;
+}
+
+#time-display {
+  font-family: "Courier New", monospace;
+  font-size: 3.5rem !important; /* Slightly smaller to fit HUD style */
+  font-weight: bold;
+  z-index: 10;
+  color: #8da070;
+  text-shadow: 0 0 10px rgba(141, 160, 112, 0.8);
+  user-select: none;
+}
+
+.progress-ring {
+  position: absolute;
+  transform: rotate(-90deg);
+  width: 100%; /* Fills the clock-face */
+  height: 100%; /* Fills the clock-face */
+  top: 0; /* Reset from -3px */
+  left: 0; /* Reset from -3px */
+}
+
+.progress-ring__circle {
+  transition: stroke-dashoffset 0.1s linear;
+  stroke-dasharray: 565.48;
+  stroke-dashoffset: 0;
+  stroke-width: 10; /* Thinner for a cleaner tech look */
+}
+#time-display.warning {
+  color: #ff3333;
+  text-shadow: 0 0 15px #ff0000;
+  user-select: none;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* .clock-face {
+} */
+
+/* Add HUD Crosshair lines to the clock */
+.clock-face::before,
+.clock-face::after {
+  content: "";
+  position: absolute;
+  background: rgba(141, 160, 112, 0.3);
+}
+.clock-face::before {
+  width: 100%;
+  height: 1px;
+} /* Horizontal line */
+.clock-face::after {
+  width: 1px;
+  height: 100%;
+} /* Vertical line */

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet" href="zeroSession.css" />
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const exercisesBtn = document.getElementById("goToExercises");
+        const startBtn = document.getElementById("startZeroSession");
+
+        exercisesBtn.addEventListener("click", () => {
+          window.location.href = `./exercises.html`;
+        });
+
+        startBtn.addEventListener("click", () => {
+          window.location.href = `./secondShooting.html`;
+        });
+
+        function renderPreview(canvasId) {
+          const canvas = document.getElementById(canvasId);
+          if (!canvas) return;
+          const ctx = canvas.getContext("2d");
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.save();
+
+          // Move origin to center-bottom and scale 2x
+          ctx.translate(canvas.width / 2, canvas.height - 40);
+          ctx.scale(2.2, 2.2);
+
+          ctx.strokeStyle = "lime";
+          ctx.fillStyle = "rgba(141, 160, 112, 0.8)";
+          ctx.lineWidth = 1.5;
+
+          if (canvasId === "preview10") drawTargetN10_Static(ctx, -18, 0);
+          if (canvasId === "preview8") drawTargetN8_Static(ctx, -6, 0);
+          if (canvasId === "preview7") drawTargetN7_Static(ctx, -12, 0);
+
+          ctx.restore();
+        }
+
+        function drawTargetN10_Static(ctx, x, y) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 37.5, y);
+          ctx.lineTo(x + 37.5, y - 18.5);
+          ctx.lineTo(x + 32.5, y - 18.5);
+          ctx.lineTo(x + 32.5, y - 27.5);
+          ctx.lineTo(x + 18.5, y - 27.5);
+          ctx.lineTo(x + 18.5, y - 17.5);
+          ctx.lineTo(x + 5, y - 17.5);
+          ctx.lineTo(x + 5, y - 11.5);
+          ctx.lineTo(x, y - 11.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        function drawTargetN8_Static(ctx, x, y) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 12.5, y);
+          ctx.lineTo(x + 18.75, y - 25);
+          ctx.lineTo(x + 18.75, y - 66);
+          ctx.lineTo(x + 12, y - 66);
+          ctx.lineTo(x + 12, y - 75);
+          ctx.lineTo(x + 0.5, y - 75);
+          ctx.lineTo(x + 0.5, y - 66);
+          ctx.lineTo(x - 6.5, y - 66);
+          ctx.lineTo(x - 6.5, y - 25);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        function drawTargetN7_Static(ctx, x, y) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 25, y);
+          ctx.lineTo(x + 25, y - 37.5);
+          ctx.lineTo(x + 18.25, y - 37.5);
+          ctx.lineTo(x + 18.25, y - 50);
+          ctx.lineTo(x + 6.75, y - 50);
+          ctx.lineTo(x + 6.75, y - 37.5);
+          ctx.lineTo(x, y - 37.5);
+
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        ["preview10", "preview8", "preview7"].forEach((id) =>
+          renderPreview(id),
+        );
+      });
+    </script>
+    <title>2-nji Atyş | Okuw</title>
+  </head>
+  <body>
+    <div id="frame">
+      <img id="bg" src="yellow-green.jpg" alt="background" />
+      <div class="scanlines"></div>
+
+      <div id="mainContainer">
+        <header class="page-header">
+          <h1>2-nji Okuw Atyş: <span class="highlight">GÖZÜKDIRME</span></h1>
+        </header>
+
+        <div id="instructionsContainer">
+          <div class="instructions-panel" id="instructionsFrame">
+            <div class="panel-header">OKUW ATYŞ MAGLUMATLARY</div>
+            <div class="scroll-content">
+              <h3>
+                PEÝDA BOLÝAN WE HEREKET EDÝÄN NYŞANALAR BOÝUNÇA ATYŞ POZISIÝANY
+                ÇALYŞMAK BILEN DURAN ÝERIŇDE ATMAK
+              </h3>
+              <h2>Nyşanalar:</h2>
+              <h3>
+                Hüjüm edýän (yza çekilýän) pyýada topar – 3 metrden az bolmadyk
+                frontda iki boý şekili (nyşana №8), atylýan uguruň tekizligi
+                boýunça 15-25o burç astynda 2-3 m/s. tizlikde 60 metrde hereket
+                edýär;
+              </h3>
+              <h3>
+                Atyjy topar iki şekil - 10 metrden az bolmadyk frontda el
+                pulemýoty (nyşana №10) we atyjy (nyşana №7), her 15 sekuntdan
+                gündiz 10 sekunt gije 15 sekunt iki gezek peýda bolýar;
+              </h3>
+              <h3>
+                Hüjüm edýän atyjy (nyşana №7) gündiz 15 sekunt, gije 20 sekunt
+                bir gezek peýda bolýar.
+              </h3>
+
+              <table id="distanceTable">
+                <tr>
+                  <td rowspan="2">Ýaragyň görnüşi</td>
+                  <td colspan="3">Nyşanalar</td>
+                </tr>
+                <tr>
+                  <td>
+                    Hüjüm edýän (Yza Çekilýän) <br />
+                    pyýada top
+                  <td>Atyjy topar</td>
+                  </td>
+                  <td>
+                    Hüjüm edýän atyjy
+                  </td>
+                </tr>
+                <tr>
+                  <td>AK, RPK</td>
+                  <td>450-550</td>
+                  <td>250-330</td>
+                  <td>150-250</td>
+                </tr>
+                <tr>
+                  <td>PK</td>
+                  <td>450-550</td>
+                  <td>350-450</td>
+                  <td>250-350</td>
+                </tr>
+              </table>
+              <h3>Ok-därileriň mukdary:</h3>
+              <h4>
+                Awtomat, RPK, PK üçin 30 ok, şolardan 10 ugur görkeziji gülleli.
+              </h4>
+              <h3>Atmak üçin ýagdaý:</h3>
+              <h4>Garymda dik durup eliňe daýanyp (diregde).</h4>
+              <h3>Bahalar:</h3>
+              <h4>"Bäşlik" - ähli nyşanalary urmaly;</h4>
+              <h4>
+                "Dörtlük" - hüjüm edýän (yza çekilýän) pyýada topary we atyjy
+                topary urmaly;
+              </h4>
+              <h4>"Üçlük" - bir nyşanany urmaly.</h4>
+              <h3>Atyşy ýerine ýetirmegiň aýratynlyklary.</h3>
+              <h4>
+                Gönükme ýerine ýetirilende oklar iki ok gabyna (bir gutuda) deň
+                paýlanýar. <br />
+                Atyş pozisiýany çalyşmak (garymdan-garyma geçmek) her nyşana
+                degenden soňra ýa-da nyşanalaryň görkeziliş wagty tamamlanandan
+                soňra özbaşdak ýerine ýetirilýär.
+              </h4>
+            </div>
+          </div>
+
+          <div class="instructions-panel" id="bodyImages">
+            <div class="panel-header warning">NYŞANALAR</div>
+            <div class="scroll-content image-grid" id="secondSessionGrid">
+              <div>
+                <canvas id="preview10" width="240" height="300"></canvas>
+                <h1>Nyşana №10a</h1>
+              </div>
+              <div>
+                <canvas id="preview8" width="240" height="300"></canvas>
+                <h1>Nyşana №8</h1>
+              </div>
+              <div>
+                <canvas id="preview7" width="240" height="300"></canvas>
+                <h1>Nyşana №7</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="buttonsContainer">
+          <button class="buttons secondary" id="goToExercises">← YZA</button>
+          <button class="military-btn primary" id="startZeroSession">
+            ATYŞA BAŞLA!
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

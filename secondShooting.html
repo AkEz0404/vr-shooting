@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atyş - Tapgyr 2</title>
+    <link rel="stylesheet" href="secondShooting.css" />
+    <link rel="stylesheet" href="clock.css" />
+    <script src="secondShooting.js" defer></script>
+  </head>
+  <body>
+    <div
+      id="game-container"
+      style="position: relative; width: 1280px; margin: 0 auto"
+    >
+      <div id="game-dialog" class="dialog-overlay" style="display: none">
+        <div class="dialog-content">
+          <h2>ÜNS BERIŇ</h2>
+          <p id="dialog-text">Indiki tapgyra taýynlanyň...</p>
+        </div>
+      </div>
+
+      <div class="clock-container">
+        <div class="clock-face">
+          <svg class="progress-ring" viewBox="0 0 200 200">
+            <circle
+              class="progress-ring__circle"
+              stroke="green"
+              stroke-width="8"
+              fill="transparent"
+              r="90"
+              cx="100"
+              cy="100"
+            />
+          </svg>
+          <div id="time-display">00</div>
+        </div>
+      </div>
+
+      <div id="hitmap-container">
+        <div id="hitmap-label">Target Hit Map</div>
+        <canvas id="hitmapCanvas" width="150" height="150"></canvas>
+      </div>
+
+      <canvas id="gameCanvas" width="1280" height="720"></canvas>
+      <img src="aim_close.png" id="weapon-overlay" />
+    </div>
+  </body>
+</html>

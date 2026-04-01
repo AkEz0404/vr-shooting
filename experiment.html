@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <body
+    style="
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    "
+  >
+    <canvas
+      id="circleCanvas"
+      width="600"
+      height="600"
+      style="background: #111"
+    ></canvas>
+
+    <script>
+      const canvas = document.getElementById("circleCanvas");
+      const ctx = canvas.getContext("2d");
+
+      let angle = 0; // This is our "rotation"
+      const distanceFromCenter = 200; // How far the dot is from the center
+      const centerX = 300;
+      const centerY = 300;
+
+      function drawSwingingRobe() {
+        // 2. THE MAGIC MATH
+        // Cosine gives us the horizontal (X) position
+        // Sine gives us the vertical (Y) position
+        let x = centerX + Math.cos(angle) * distanceFromCenter;
+        let y = centerY + Math.sin(angle) * distanceFromCenter;
+
+        // 3. Draw a line from center to dot (The "Clock Hand")
+        ctx.strokeStyle = "#555";
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        // 4. Draw the spinning dot
+        ctx.fillStyle = "#00D2FF";
+        ctx.beginPath();
+        ctx.arc(x, y, 25, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5. Update the angle
+        angle += 0.03;
+      }
+
+      function draw() {
+        // 1. Clear the screen
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawSwingingRobe();
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+    </script>
+  </body>
+</html>

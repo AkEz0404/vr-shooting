@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="clock.js" defer></script>
+
+    <link rel="stylesheet" href="clock.css" />
+
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="clock-container">
+      <div class="clock-face">
+        <svg class="progress-ring" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="50" fill="rgba(255, 255, 255, 0.1)" />
+          <circle
+            class="progress-ring__circle"
+            stroke="green"
+            stroke-width="100"
+            fill="transparent"
+            r="25"
+            cx="50"
+            cy="50"
+            style="stroke-dasharray: 157; stroke-dashoffset: 0"
+          />
+        </svg>
+        <div id="time-display">00</div>
+      </div>
+    </div>
+  </body>
+</html>
