@@ -52,34 +52,67 @@ border-radius: 5px; }
 	window.addEventListener('resize', resize);
 	resize();
 
-	async function startVR() {
-		if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
-		DeviceOrientationEvent.requestPermission().then(response => {
-		if (response == 'granted') {
-		}
-	}).catch(console.error); }
+	// Переменная для запоминания начального наклона
+let baseBeta = 0;
+let calibrated = false;
 
-		document.getElementById("overlay").style.display = "none";
-		isRunning = true;
-		window.addEventListener('deviceorientation', (event) =>
-	{
-		if (!isRunning) return;
+async function startVR() {
+    // Стандартный запрос разрешения (оставляем)
+    if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
+        try {
+            const response = await DeviceOrientationEvent.requestPermission();
+            if (response !== 'granted') {
+                alert("Нужен доступ к гироскопу для игры!");
+                return;
+            }
+        } catch (error) { console.error(error); }
+    }
 
-		let x, y;
+    // Запускаем игру
+    document.getElementById("overlay").style.display = "none";
+    isRunning = true;
+    calibrated = false; // Сбрасываем калибровку для нового старта
 
-		if (window.innerWidth > window.innerHeight) {
+    window.addEventListener('deviceorientation', (event) => {
+        if (!isRunning) return;
 
-		x = (event.beta - 45) * 12;
-		y = -event.gamma * 12; } else {
+        // --- КАЛИБРОВКА (Первое срабатывание) ---
+        if (!calibrated) {
+            // Запоминаем текущий наклон как центр
+            baseBeta = event.beta; 
+            calibrated = true;
+            return;
+        }
 
-		x = event.gamma * 12;
-		y = (event.beta - 45) * 12; }
+        // --- ОБРАБОТКА ДВИЖЕНИЯ ---
+        let x, y;
+        const sensitivity = 12; // Чувствительность
 
-		gyro.x = x;
-		gyro.y = y; 
-}, true);
+        // Вычисляем отклонение от центра
+        let offsetBeta = event.beta - baseBeta; // Это решит проблему "пола"
+        let offsetGamma = event.gamma;
 
-		animate(); }
+        // Проверяем ориентацию (горизонтально/вертикально)
+        if (window.innerWidth > window.innerHeight) {
+            // Горизонтально (на боку)
+            x = offsetBeta * sensitivity;
+            // Добавим минус к gamma, чтобы при наклоне на себя камера не шла вниз
+            y = -offsetGamma * sensitivity; 
+        } else {
+            // Вертикально
+            x = offsetGamma * sensitivity;
+            y = offsetBeta * sensitivity;
+        }
+
+        // Применяем к твоим переменным
+        gyro.x = x;
+        gyro.y = y;
+
+    }, true);
+
+    animate();
+}
+
 
 	function fire() {
 		if (!isRunning || ammo <= 0) {
