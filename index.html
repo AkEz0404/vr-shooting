@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VR Elite Shooter</title>
+    <title>VR Pro Shooter</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Arial', sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: sans-serif; }
         canvas { display: block; }
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 100;
         }
         #startButton {
-            padding: 20px 60px; font-size: 30px; cursor: pointer;
-            background: #e74c3c; color: white; border: none; border-radius: 50px;
-            box-shadow: 0 0 20px rgba(231, 76, 60, 0.5); font-weight: bold;
+            padding: 20px 50px; font-size: 25px; cursor: pointer;
+            background: #27ae60; color: white; border: none; border-radius: 10px;
         }
-        .info { margin-top: 20px; color: #888; text-align: center; font-size: 14px; }
+        .desc { margin-top: 15px; color: #aaa; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <button id="startButton">START MISSION</button>
-    <div class="info">Держите телефон ровно перед глазами<br>Нажмите для калибровки и старта</div>
+    <button id="startButton">START GAME</button>
+    <div class="desc">Держите телефон вертикально перед глазами<br>и нажмите кнопку для калибровки</div>
 </div>
 <canvas id="gameCanvas"></canvas>
 
@@ -35,40 +34,27 @@
     let isRunning = false;
     let score = 0;
     let ammo = 30;
-    let baseBeta = null;
     let gyro = { x: 0, y: 0 };
+    let baseBeta = null; // Точка отсчета для рук
     let lastShotTime = 0;
 
-    // Настройки мишеней
-    let targets = [];
-    const targetCount = 5;
-
+    // Ресурсы
     const ASSETS = {
         bg: new Image(),
         shot: new Audio("ak74_shot.mp3")
     };
+    ASSETS.bg.src = "iceland.jpg"; // Если не сработает, попробуй 3_iceland.jpg
 
-    // Авто-подбор картинки
-    const imgVariants = ["iceland.jpg", "Iceland.jpg", "3_iceland.jpg"];
-    let vIdx = 0;
-    function loadNext() {
-        if (vIdx < imgVariants.length) {
-            ASSETS.bg.src = imgVariants[vIdx++];
-        }
-    }
-    ASSETS.bg.onerror = loadNext;
-    loadNext();
-
-    // Создание мишеней
+    // Мишени
+    let targets = [];
     function createTargets() {
-        targets = [];
-        for (let i = 0; i < targetCount; i++) {
+        for(let i=0; i<5; i++) {
             targets.push({
-                x: (Math.random() - 0.5) * 400,
-                y: (Math.random() - 0.5) * 300,
-                vx: (Math.random() - 0.5) * 2,
-                vy: (Math.random() - 0.5) * 2,
-                size: 20,
+                x: (Math.random()-0.5)*500,
+                y: (Math.random()-0.5)*300,
+                vx: (Math.random()-0.5)*3,
+                vy: (Math.random()-0.5)*3,
+                size: 25,
                 active: true
             });
         }
@@ -81,29 +67,24 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Логика выстрела
+    // Выстрел
     function fire() {
         const now = Date.now();
-        if (!isRunning || ammo <= 0 || (now - lastShotTime) < 250) return;
-        
+        if (!isRunning || ammo <= 0 || (now - lastShotTime) < 200) return;
         lastShotTime = now;
         ammo--;
         ASSETS.shot.currentTime = 0;
         ASSETS.shot.play().catch(()=>{});
 
-        // Проверка попадания (центр экрана)
+        // Проверка попадания
         targets.forEach(t => {
             if (!t.active) return;
-            // Рассчитываем положение мишени относительно центра с учетом гироскопа
-            let dist = Math.sqrt(Math.pow(t.x - gyro.x, 2) + Math.pow(t.y - gyro.y, 2));
-            if (dist < t.size + 10) {
+            let dx = t.x - gyro.x;
+            let dy = t.y - gyro.y;
+            if (Math.sqrt(dx*dx + dy*dy) < t.size + 10) {
                 t.active = false;
                 score += 10;
-                setTimeout(() => { // Возрождение мишени
-                    t.x = (Math.random() - 0.5) * 400;
-                    t.y = (Math.random() - 0.5) * 300;
-                    t.active = true;
-                }, 2000);
+                setTimeout(() => { t.active = true; t.x = (Math.random()-0.5)*500; }, 2000);
             }
         });
     }
@@ -112,82 +93,71 @@
         if (isRunning && e.target.id !== 'startButton') fire();
     });
 
-    async function startVR() {
+    // Старт и Калибровка
+    document.getElementById("startButton").onclick = async () => {
         if (window.DeviceOrientationEvent?.requestPermission) {
             await DeviceOrientationEvent.requestPermission();
         }
         document.getElementById("overlay").style.display = "none";
         createTargets();
         isRunning = true;
-        
+
         window.addEventListener('deviceorientation', (e) => {
+            // САМОЕ ВАЖНОЕ: запоминаем угол, когда нажали кнопку
             if (baseBeta === null) baseBeta = e.beta;
-            let db = e.beta - baseBeta;
+            
+            let deltaBeta = e.beta - baseBeta; // Смещение относительно рук
+
             if (window.innerWidth > window.innerHeight) {
-                gyro.x = db * 15;
+                gyro.x = deltaBeta * 15;
                 gyro.y = -e.gamma * 15;
             } else {
                 gyro.x = e.gamma * 15;
-                gyro.y = db * 15;
+                gyro.y = deltaBeta * 15;
             }
         });
         animate();
-    }
+    };
 
     function animate() {
         if (!isRunning) return;
-        ctx.fillStyle = "#000";
+        ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const scale = 0.7;
+        const scale = 0.6; // Масштаб картинки (60%)
         const dw = canvas.width * scale;
-        const dh = (ASSETS.bg.height / ASSETS.bg.width) * dw || dw * 0.6;
+        const dh = (ASSETS.bg.height / ASSETS.bg.width) * dw || 400;
         const half = canvas.width / 2;
 
         [0, half].forEach(offset => {
             ctx.save();
             ctx.beginPath(); ctx.rect(offset, 0, half, canvas.height); ctx.clip();
-            
-            const cx = offset + half / 2;
-            const cy = canvas.height / 2;
+            const cx = offset + half/2;
+            const cy = canvas.height/2;
 
-            // Рисуем фон
+            // Фон
             if (ASSETS.bg.complete) {
                 ctx.drawImage(ASSETS.bg, (cx - dw/2) - gyro.x, (cy - dh/2) - gyro.y, dw, dh);
             }
 
-            // Рисуем мишени
+            // Мишени
             targets.forEach(t => {
                 if (!t.active) return;
-                // Движение мишеней
-                if (offset === 0) { // Обновляем физику только один раз за кадр
-                    t.x += t.vx; t.y += t.vy;
-                    if (Math.abs(t.x) > 250) t.vx *= -1;
-                    if (Math.abs(t.y) > 200) t.vy *= -1;
-                }
-
-                ctx.fillStyle = "rgba(255, 0, 0, 0.7)";
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, t.size, 0, Math.PI*2);
-                ctx.fill(); ctx.stroke();
+                if (offset === 0) { t.x += t.vx; t.y += t.vy; if(Math.abs(t.x)>300) t.vx*=-1; if(Math.abs(t.y)>200) t.vy*=-1; }
                 
-                // Белый центр мишени
+                ctx.fillStyle = "red";
+                ctx.beginPath(); ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, t.size, 0, 7); ctx.fill();
                 ctx.fillStyle = "white";
-                ctx.beginPath();
-                ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, 5, 0, Math.PI*2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, 5, 0, 7); ctx.fill();
             });
 
             // Прицел
-            ctx.fillStyle = "lime";
-            ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = "lime"; ctx.strokeRect(cx - 15, cy - 15, 30, 30);
+            ctx.strokeStyle = "lime"; ctx.lineWidth = 2;
+            ctx.strokeRect(cx - 15, cy - 15, 30, 30);
+            ctx.fillStyle = "lime"; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 7); ctx.fill();
 
-            // Инфо
-            ctx.fillStyle = "yellow";
-            ctx.font = "bold 18px Arial";
+            // Текст
+            ctx.fillStyle = "yellow"; ctx.font = "20px Arial";
             ctx.fillText("AMMO: " + ammo, offset + 20, 40);
             ctx.fillText("SCORE: " + score, offset + 20, 70);
             ctx.restore();
@@ -195,8 +165,6 @@
 
         requestAnimationFrame(animate);
     }
-
-    document.getElementById("startButton").addEventListener("click", startVR);
 </script>
 </body>
 </html>
