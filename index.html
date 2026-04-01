@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VR Pro Shooter</title>
+    <title>VR Final Fix</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: sans-serif; }
         canvas { display: block; }
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 100;
         }
-        #startButton {
-            padding: 20px 50px; font-size: 25px; cursor: pointer;
-            background: #27ae60; color: white; border: none; border-radius: 10px;
+        #startBtn {
+            padding: 25px 60px; font-size: 28px; cursor: pointer;
+            background: #e67e22; color: white; border: none; border-radius: 50px;
+            text-transform: uppercase; font-weight: bold;
         }
-        .desc { margin-top: 15px; color: #aaa; text-align: center; }
+        .msg { margin-top: 20px; color: #7f8c8d; text-align: center; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <button id="startButton">START GAME</button>
-    <div class="desc">Держите телефон вертикально перед глазами<br>и нажмите кнопку для калибровки</div>
+    <button id="startBtn">ИГРАТЬ (START)</button>
+    <div class="msg">Направьте телефон перед собой (вперед)<br>и нажмите на кнопку</div>
 </div>
 <canvas id="gameCanvas"></canvas>
 
@@ -35,26 +36,21 @@
     let score = 0;
     let ammo = 30;
     let gyro = { x: 0, y: 0 };
-    let baseBeta = null; // Точка отсчета для рук
-    let lastShotTime = 0;
+    let offset = { b: 0, g: 0 }; // Смещение калибровки
+    let lastShot = 0;
 
-    // Ресурсы
-    const ASSETS = {
-        bg: new Image(),
-        shot: new Audio("ak74_shot.mp3")
-    };
-    ASSETS.bg.src = "iceland.jpg"; // Если не сработает, попробуй 3_iceland.jpg
+    const bg = new Image();
+    bg.src = "iceland.jpg"; // Убедись, что файл Iceland.jpg или iceland.jpg есть в GitHub!
 
-    // Мишени
     let targets = [];
-    function createTargets() {
-        for(let i=0; i<5; i++) {
+    function initTargets() {
+        targets = [];
+        for(let i=0; i<6; i++) {
             targets.push({
-                x: (Math.random()-0.5)*500,
-                y: (Math.random()-0.5)*300,
-                vx: (Math.random()-0.5)*3,
-                vy: (Math.random()-0.5)*3,
-                size: 25,
+                x: (Math.random()-0.5)*600,
+                y: (Math.random()-0.5)*400,
+                vx: (Math.random()-0.5)*4,
+                vy: (Math.random()-0.5)*4,
                 active: true
             });
         }
@@ -67,53 +63,57 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Выстрел
     function fire() {
         const now = Date.now();
-        if (!isRunning || ammo <= 0 || (now - lastShotTime) < 200) return;
-        lastShotTime = now;
+        if (!isRunning || ammo <= 0 || (now - lastShot) < 250) return;
+        lastShot = now;
         ammo--;
-        ASSETS.shot.currentTime = 0;
-        ASSETS.shot.play().catch(()=>{});
+        // Звук (опционально, если есть файл)
+        new Audio("ak74_shot.mp3").play().catch(()=>{});
 
-        // Проверка попадания
         targets.forEach(t => {
             if (!t.active) return;
             let dx = t.x - gyro.x;
             let dy = t.y - gyro.y;
-            if (Math.sqrt(dx*dx + dy*dy) < t.size + 10) {
+            if (Math.sqrt(dx*dx + dy*dy) < 35) {
                 t.active = false;
                 score += 10;
-                setTimeout(() => { t.active = true; t.x = (Math.random()-0.5)*500; }, 2000);
+                setTimeout(() => { t.active = true; t.x = (Math.random()-0.5)*600; }, 1500);
             }
         });
     }
 
     window.addEventListener('pointerdown', (e) => {
-        if (isRunning && e.target.id !== 'startButton') fire();
+        if (isRunning && e.target.id !== 'startBtn') fire();
     });
 
-    // Старт и Калибровка
-    document.getElementById("startButton").onclick = async () => {
+    document.getElementById("startBtn").onclick = async () => {
         if (window.DeviceOrientationEvent?.requestPermission) {
             await DeviceOrientationEvent.requestPermission();
         }
         document.getElementById("overlay").style.display = "none";
-        createTargets();
+        initTargets();
         isRunning = true;
 
         window.addEventListener('deviceorientation', (e) => {
-            // САМОЕ ВАЖНОЕ: запоминаем угол, когда нажали кнопку
-            if (baseBeta === null) baseBeta = e.beta;
+            if (offset.b === 0 && offset.g === 0) {
+                offset.b = e.beta;
+                offset.g = e.gamma;
+            }
             
-            let deltaBeta = e.beta - baseBeta; // Смещение относительно рук
+            // Расчет с учетом калибровки
+            let b = e.beta - offset.b;
+            let g = e.gamma - offset.g;
+
+            // Чувствительность
+            const sens = 15;
 
             if (window.innerWidth > window.innerHeight) {
-                gyro.x = deltaBeta * 15;
-                gyro.y = -e.gamma * 15;
+                gyro.x = b * sens;
+                gyro.y = -g * sens;
             } else {
-                gyro.x = e.gamma * 15;
-                gyro.y = deltaBeta * 15;
+                gyro.x = g * sens;
+                gyro.y = b * sens;
             }
         });
         animate();
@@ -121,45 +121,52 @@
 
     function animate() {
         if (!isRunning) return;
-        ctx.fillStyle = "black";
+        ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const scale = 0.6; // Масштаб картинки (60%)
+        const scale = 0.8; // Размер картинки
         const dw = canvas.width * scale;
-        const dh = (ASSETS.bg.height / ASSETS.bg.width) * dw || 400;
+        const dh = (bg.height / bg.width) * dw || 500;
         const half = canvas.width / 2;
 
-        [0, half].forEach(offset => {
+        [0, half].forEach(viewOffset => {
             ctx.save();
-            ctx.beginPath(); ctx.rect(offset, 0, half, canvas.height); ctx.clip();
-            const cx = offset + half/2;
-            const cy = canvas.height/2;
+            ctx.beginPath(); ctx.rect(viewOffset, 0, half, canvas.height); ctx.clip();
+            
+            const cx = viewOffset + half / 2;
+            const cy = canvas.height / 2;
 
-            // Фон
-            if (ASSETS.bg.complete) {
-                ctx.drawImage(ASSETS.bg, (cx - dw/2) - gyro.x, (cy - dh/2) - gyro.y, dw, dh);
+            // 1. Фон
+            if (bg.complete) {
+                ctx.drawImage(bg, (cx - dw/2) - gyro.x, (cy - dh/2) - gyro.y, dw, dh);
+            } else {
+                ctx.strokeStyle = "red";
+                ctx.strokeRect((cx - dw/2) - gyro.x, (cy - dh/2) - gyro.y, dw, dh);
             }
 
-            // Мишени
+            // 2. Мишени
             targets.forEach(t => {
                 if (!t.active) return;
-                if (offset === 0) { t.x += t.vx; t.y += t.vy; if(Math.abs(t.x)>300) t.vx*=-1; if(Math.abs(t.y)>200) t.vy*=-1; }
-                
+                if (viewOffset === 0) { // Физика только 1 раз
+                    t.x += t.vx; t.y += t.vy;
+                    if (Math.abs(t.x) > 300) t.vx *= -1;
+                    if (Math.abs(t.y) > 250) t.vy *= -1;
+                }
                 ctx.fillStyle = "red";
-                ctx.beginPath(); ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, t.size, 0, 7); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, 25, 0, 7); ctx.fill();
                 ctx.fillStyle = "white";
-                ctx.beginPath(); ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, 5, 0, 7); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, 8, 0, 7); ctx.fill();
             });
 
-            // Прицел
-            ctx.strokeStyle = "lime"; ctx.lineWidth = 2;
-            ctx.strokeRect(cx - 15, cy - 15, 30, 30);
-            ctx.fillStyle = "lime"; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 7); ctx.fill();
+            // 3. Прицел (зафиксирован в центре глаза)
+            ctx.strokeStyle = "#0f0"; ctx.lineWidth = 3;
+            ctx.strokeRect(cx - 20, cy - 20, 40, 40);
+            ctx.fillStyle = "#0f0"; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, 7); ctx.fill();
 
-            // Текст
-            ctx.fillStyle = "yellow"; ctx.font = "20px Arial";
-            ctx.fillText("AMMO: " + ammo, offset + 20, 40);
-            ctx.fillText("SCORE: " + score, offset + 20, 70);
+            // 4. Текст
+            ctx.fillStyle = "#fff"; ctx.font = "bold 22px Arial";
+            ctx.fillText("AMMO: " + ammo, viewOffset + 30, 50);
+            ctx.fillText("SCORE: " + score, viewOffset + 30, 85);
             ctx.restore();
         });
 
@@ -168,4 +175,3 @@
 </script>
 </body>
 </html>
-
