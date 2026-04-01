@@ -63,8 +63,22 @@ border-radius: 5px; }
 		isRunning = true;
 		window.addEventListener('deviceorientation', (event) =>
 	{
-		gyro.x = event.gamma * 12;
-		gyro.y = (event.beta - 45) * 12; }, true);
+		if (!isRunning) return;
+
+		let x, y;
+
+		if (window.innerWidth > window.innerHeight) {
+
+		x = (event.beta - 45) * 12;
+		y = -event.gamma * 12; } else {
+
+		x = event.gamma * 12;
+		y = (event.beta - 45) * 12; }
+
+		gyro.x = x;
+		gyro.y = y; 
+}, true);
+
 		animate(); }
 
 	function fire() {
