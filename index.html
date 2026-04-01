@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VR Shooting Gallery</title>
+    <title>VR Elite Shooter</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; color: white; font-family: 'Arial', sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Arial', sans-serif; }
         canvas { display: block; }
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -13,23 +13,18 @@
             align-items: center; justify-content: center; z-index: 100;
         }
         #startButton {
-            padding: 20px 50px; font-size: 28px; cursor: pointer;
-            background: #27ae60; color: white; border: none; border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(46, 204, 113, 0.4); transition: 0.3s;
+            padding: 20px 60px; font-size: 30px; cursor: pointer;
+            background: #e74c3c; color: white; border: none; border-radius: 50px;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.5); font-weight: bold;
         }
-        #startButton:active { transform: scale(0.95); }
-        .instructions { margin-top: 20px; color: #aaa; text-align: center; line-height: 1.5; }
+        .info { margin-top: 20px; color: #888; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <button id="startButton">START GAME</button>
-    <div class="instructions">
-        1. Поверните телефон горизонтально<br>
-        2. Держите его перед глазами прямо<br>
-        3. Нажмите кнопку для калибровки центра
-    </div>
+    <button id="startButton">START MISSION</button>
+    <div class="info">Держите телефон ровно перед глазами<br>Нажмите для калибровки и старта</div>
 </div>
 <canvas id="gameCanvas"></canvas>
 
@@ -37,20 +32,47 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Игровые переменные
     let isRunning = false;
-    let ammo = 30;
     let score = 0;
-    let baseBeta = null; 
+    let ammo = 30;
+    let baseBeta = null;
     let gyro = { x: 0, y: 0 };
-    const sensitivity = 18; // Скорость движения камеры
+    let lastShotTime = 0;
 
-    // Ресурсы
+    // Настройки мишеней
+    let targets = [];
+    const targetCount = 5;
+
     const ASSETS = {
         bg: new Image(),
-        gunshot: new Audio("ak74_shot.mp3") // Убедись, что файл есть на GitHub
+        shot: new Audio("ak74_shot.mp3")
     };
-    ASSETS.bg.src = "iceland.jpg"; 
+
+    // Авто-подбор картинки
+    const imgVariants = ["iceland.jpg", "Iceland.jpg", "3_iceland.jpg"];
+    let vIdx = 0;
+    function loadNext() {
+        if (vIdx < imgVariants.length) {
+            ASSETS.bg.src = imgVariants[vIdx++];
+        }
+    }
+    ASSETS.bg.onerror = loadNext;
+    loadNext();
+
+    // Создание мишеней
+    function createTargets() {
+        targets = [];
+        for (let i = 0; i < targetCount; i++) {
+            targets.push({
+                x: (Math.random() - 0.5) * 400,
+                y: (Math.random() - 0.5) * 300,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                size: 20,
+                active: true
+            });
+        }
+    }
 
     function resize() {
         canvas.width = window.innerWidth;
@@ -59,110 +81,116 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Функция стрельбы
+    // Логика выстрела
     function fire() {
-        if (!isRunning || ammo <= 0) {
-            if (ammo <= 0) console.log("Recharge! (Perezaryadka!)");
-            return;
-        }
-        ammo--;
+        const now = Date.now();
+        if (!isRunning || ammo <= 0 || (now - lastShotTime) < 250) return;
         
-        // Звук выстрела
-        ASSETS.gunshot.currentTime = 0;
-        ASSETS.gunshot.play().catch(() => {});
+        lastShotTime = now;
+        ammo--;
+        ASSETS.shot.currentTime = 0;
+        ASSETS.shot.play().catch(()=>{});
 
-        // Простая логика попадания (если прицел близко к центру - даем очки)
-        // В будущем здесь можно добавить проверку попадания в мишени
-        score += 1; 
+        // Проверка попадания (центр экрана)
+        targets.forEach(t => {
+            if (!t.active) return;
+            // Рассчитываем положение мишени относительно центра с учетом гироскопа
+            let dist = Math.sqrt(Math.pow(t.x - gyro.x, 2) + Math.pow(t.y - gyro.y, 2));
+            if (dist < t.size + 10) {
+                t.active = false;
+                score += 10;
+                setTimeout(() => { // Возрождение мишени
+                    t.x = (Math.random() - 0.5) * 400;
+                    t.y = (Math.random() - 0.5) * 300;
+                    t.active = true;
+                }, 2000);
+            }
+        });
     }
 
-    // Клик по экрану для стрельбы
-    window.addEventListener('click', (e) => {
+    window.addEventListener('pointerdown', (e) => {
         if (isRunning && e.target.id !== 'startButton') fire();
     });
 
     async function startVR() {
-        if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
-            try {
-                const response = await DeviceOrientationEvent.requestPermission();
-                if (response !== 'granted') return;
-            } catch (e) { console.error(e); }
+        if (window.DeviceOrientationEvent?.requestPermission) {
+            await DeviceOrientationEvent.requestPermission();
         }
-
         document.getElementById("overlay").style.display = "none";
+        createTargets();
         isRunning = true;
-        baseBeta = null; // Сброс калибровки
-
-        window.addEventListener('deviceorientation', (event) => {
-            if (!isRunning) return;
-
-            // Калибровка: запоминаем наклон в момент нажатия кнопки
-            if (baseBeta === null) {
-                baseBeta = event.beta;
-            }
-
-            let deltaBeta = event.beta - baseBeta;
-
-            // Горизонтальный режим
+        
+        window.addEventListener('deviceorientation', (e) => {
+            if (baseBeta === null) baseBeta = e.beta;
+            let db = e.beta - baseBeta;
             if (window.innerWidth > window.innerHeight) {
-                gyro.x = deltaBeta * sensitivity;
-                gyro.y = -event.gamma * sensitivity; 
+                gyro.x = db * 15;
+                gyro.y = -e.gamma * 15;
             } else {
-                // Вертикальный режим
-                gyro.x = event.gamma * sensitivity;
-                gyro.y = deltaBeta * sensitivity;
+                gyro.x = e.gamma * 15;
+                gyro.y = db * 15;
             }
-        }, true);
-
+        });
         animate();
     }
 
     function animate() {
         if (!isRunning) return;
-
-        // Фон
-        ctx.fillStyle = "black";
+        ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // МАСШТАБ КАРТИНКИ: 0.6 (60% экрана) - можно менять
-        const bgScale = 0.6; 
-        const drawWidth = canvas.width * bgScale;
-        const drawHeight = (ASSETS.bg.height / ASSETS.bg.width) * drawWidth;
+        const scale = 0.7;
+        const dw = canvas.width * scale;
+        const dh = (ASSETS.bg.height / ASSETS.bg.width) * dw || dw * 0.6;
+        const half = canvas.width / 2;
 
-        const centerY = (canvas.height - drawHeight) / 2;
-        const halfWidth = canvas.width / 2;
-
-        if (ASSETS.bg.complete) {
-            // Рисуем для двух глаз (VR эффект)
+        [0, half].forEach(offset => {
+            ctx.save();
+            ctx.beginPath(); ctx.rect(offset, 0, half, canvas.height); ctx.clip();
             
-            // Левый глаз
-            ctx.save();
-            ctx.beginPath(); ctx.rect(0, 0, halfWidth, canvas.height); ctx.clip();
-            ctx.drawImage(ASSETS.bg, (halfWidth/2 - drawWidth/2) - gyro.x, centerY - gyro.y, drawWidth, drawHeight);
-            ctx.restore();
+            const cx = offset + half / 2;
+            const cy = canvas.height / 2;
 
-            // Правый глаз
-            ctx.save();
-            ctx.beginPath(); ctx.rect(halfWidth, 0, halfWidth, canvas.height); ctx.clip();
-            ctx.drawImage(ASSETS.bg, (halfWidth + halfWidth/2 - drawWidth/2) - gyro.x, centerY - gyro.y, drawWidth, drawHeight);
-            ctx.restore();
-        }
+            // Рисуем фон
+            if (ASSETS.bg.complete) {
+                ctx.drawImage(ASSETS.bg, (cx - dw/2) - gyro.x, (cy - dh/2) - gyro.y, dw, dh);
+            }
 
-        // Интерфейс и прицелы
-        const eyeCenters = [canvas.width * 0.25, canvas.width * 0.75];
-        
-        eyeCenters.forEach(centerX => {
+            // Рисуем мишени
+            targets.forEach(t => {
+                if (!t.active) return;
+                // Движение мишеней
+                if (offset === 0) { // Обновляем физику только один раз за кадр
+                    t.x += t.vx; t.y += t.vy;
+                    if (Math.abs(t.x) > 250) t.vx *= -1;
+                    if (Math.abs(t.y) > 200) t.vy *= -1;
+                }
+
+                ctx.fillStyle = "rgba(255, 0, 0, 0.7)";
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, t.size, 0, Math.PI*2);
+                ctx.fill(); ctx.stroke();
+                
+                // Белый центр мишени
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.arc(cx + t.x - gyro.x, cy + t.y - gyro.y, 5, 0, Math.PI*2);
+                ctx.fill();
+            });
+
             // Прицел
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.arc(centerX, canvas.height / 2, 5, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillStyle = "lime";
+            ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "lime"; ctx.strokeRect(cx - 15, cy - 15, 30, 30);
 
-            // Текст (AMMO и SCORE)
+            // Инфо
             ctx.fillStyle = "yellow";
-            ctx.font = "bold 20px Arial";
-            ctx.fillText("AMMO: " + ammo, centerX - 100, 40);
-            ctx.fillText("SCORE: " + score, centerX - 100, 70);
+            ctx.font = "bold 18px Arial";
+            ctx.fillText("AMMO: " + ammo, offset + 20, 40);
+            ctx.fillText("SCORE: " + score, offset + 20, 70);
+            ctx.restore();
         });
 
         requestAnimationFrame(animate);
@@ -170,7 +198,6 @@
 
     document.getElementById("startButton").addEventListener("click", startVR);
 </script>
-
 </body>
 </html>
 
